@@ -226,14 +226,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-heigh
 <div class="game-panel" id="game-num">
   <div class="screen active" id="num-start">
     <div class="big-title">Number<br><span>Memory</span></div>
-    <div class="subtitle">A number flashes on screen. Memorize it, then type it back. You get 2 peeks per game — use them wisely.</div>
+    <div class="subtitle">A number flashes on screen. Memorize it, then type it back. You can peek — but each peek costs a life.</div>
     <button class="btn" onclick="numStart()">Start</button>
   </div>
   <div class="screen" id="num-play">
     <div class="hud">
       <div class="hud-stat"><div class="hud-label">Digits</div><div class="hud-val neutral" id="num-digits">1</div></div>
       <div class="hud-stat"><div class="hud-label">Lives</div><div class="lives" id="num-lives"></div></div>
-      <div class="hud-stat"><div class="hud-label">Peeks</div><div class="lives" id="num-peeks"></div></div>
       <div class="hud-stat"><div class="hud-label">Best</div><div class="hud-val" id="num-best">—</div></div>
     </div>
     <div class="phase-badge memorize" id="num-phase"><span class="phase-icon">🧠</span><span id="num-phase-text">Memorize</span></div>
@@ -564,6 +563,21 @@ async function numSubmit(){
     NUM.lives--;loseLife('num-lives');await sleep(1300)
     if(NUM.lives<=0)numEnd();else{NUM.digits=Math.max(1,NUM.digits-1);numRound()}
   }
+}
+
+async function numPeek(){
+  if(NUM.phase!=='input')return
+  NUM.phase='peeking'
+  const btn=$('num-peek-btn');btn.disabled=true
+  NUM.lives--;loseLife('num-lives')
+  $('num-display').textContent=NUM.current;$('num-display').style.opacity='1'
+  $('num-instr').textContent='Peeking… −1 life';$('num-instr').className='instruction danger'
+  await sleep(1500)
+  $('num-display').textContent='?'
+  btn.disabled=false
+  if(NUM.lives<=0){await sleep(300);numEnd();return}
+  NUM.phase='input'
+  $('num-instr').textContent='';$('num-instr').className='instruction highlight'
 }
 
 function numEnd(){
