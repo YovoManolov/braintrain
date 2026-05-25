@@ -83,17 +83,31 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-heigh
    1. CHIMP TEST
 ═══════════════════════════════════════ */
 #chimp-grid{display:grid;gap:7px;width:100%;user-select:none;-webkit-user-select:none}
-.chimp-cell{aspect-ratio:1;border-radius:6px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:clamp(13px,2.2vw,20px);font-weight:600;cursor:pointer;transition:background 0.07s,border-color 0.07s,transform 0.05s;will-change:transform}
+.chimp-cell{aspect-ratio:1;border-radius:6px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:clamp(22px,5vw,40px);font-weight:600;cursor:pointer;transition:background 0.07s,border-color 0.07s,transform 0.05s;will-change:transform}
 .chimp-cell.has-num{border-color:var(--accent);color:var(--accent)}
 .chimp-cell.hidden-num{border-color:var(--border);color:transparent;cursor:pointer}
 .chimp-cell.hidden-num:hover{background:var(--accent);border-color:var(--accent);transform:scale(0.94)}
 .chimp-cell.correct{background:var(--success)!important;border-color:var(--success)!important;color:#000!important;animation:pop 0.18s ease}
 .chimp-cell.wrong{background:var(--danger)!important;border-color:var(--danger)!important;color:#000!important;animation:pop 0.18s ease}
 .chimp-cell.empty{background:transparent;border-color:transparent;pointer-events:none}
+.chimp-status{display:flex;align-items:center;justify-content:center;gap:14px;font-family:var(--font-mono);font-size:clamp(15px,3vw,22px);font-weight:600;letter-spacing:0.1em;text-transform:uppercase;text-align:center;min-height:40px;transition:color 0.2s}
+.chimp-status .dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;transition:background 0.2s,box-shadow 0.2s}
+.chimp-status.memorize{color:var(--danger)}
+.chimp-status.memorize .dot{background:var(--danger);box-shadow:0 0 0 0 rgba(255,71,71,0.5);animation:chimpDotPulse 1.2s ease-in-out infinite}
+.chimp-status.go{color:var(--success)}
+.chimp-status.go .dot{background:var(--success);box-shadow:0 0 0 0 rgba(71,255,138,0.6);animation:chimpDotGo 0.45s ease}
+@keyframes chimpDotPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,71,71,0)}50%{box-shadow:0 0 0 10px rgba(255,71,71,0.18)}}
+@keyframes chimpDotGo{0%{transform:scale(0.7);box-shadow:0 0 0 0 rgba(71,255,138,0.7)}60%{transform:scale(1.15);box-shadow:0 0 0 16px rgba(71,255,138,0)}100%{transform:scale(1);box-shadow:0 0 0 0 rgba(71,255,138,0)}}
 
 /* ═══════════════════════════════════════
    2. NUMBER MEMORY
 ═══════════════════════════════════════ */
+.phase-badge{width:100%;max-width:420px;padding:18px 24px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;gap:12px;font-family:var(--font-mono);font-size:clamp(20px,5vw,32px);font-weight:600;letter-spacing:0.18em;text-transform:uppercase;text-align:center;transition:background 0.2s,border-color 0.2s,color 0.2s;min-height:72px}
+.phase-badge .phase-icon{font-size:1.2em;line-height:1}
+.phase-badge.memorize{background:rgba(232,255,71,0.08);border-color:var(--accent);color:var(--accent);animation:phasePulse 1.4s ease-in-out infinite}
+.phase-badge.go{background:var(--accent2);border-color:var(--accent2);color:#000;animation:phaseGo 0.45s ease}
+@keyframes phasePulse{0%,100%{box-shadow:0 0 0 0 rgba(232,255,71,0.0)}50%{box-shadow:0 0 0 6px rgba(232,255,71,0.12)}}
+@keyframes phaseGo{0%{transform:scale(0.85);box-shadow:0 0 0 0 rgba(71,255,232,0.6)}60%{transform:scale(1.04);box-shadow:0 0 0 14px rgba(71,255,232,0)}100%{transform:scale(1);box-shadow:0 0 0 0 rgba(71,255,232,0)}}
 .number-display{font-family:var(--font-mono);font-size:clamp(30px,8vw,68px);font-weight:600;letter-spacing:0.12em;text-align:center;color:var(--text);min-height:85px;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s;word-break:break-all;max-width:600px;padding:0.5rem}
 .number-input-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:360px}
 #num-input{font-family:var(--font-mono);font-size:clamp(22px,5vw,38px);font-weight:600;letter-spacing:0.18em;text-align:center;background:var(--surface2);border:2px solid var(--border);border-radius:6px;color:var(--text);width:100%;padding:14px;outline:none;transition:border-color 0.12s;caret-color:var(--accent)}
@@ -183,7 +197,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-heigh
       <div class="hud-stat"><div class="hud-label">Lives</div><div class="lives" id="chimp-lives"></div></div>
       <div class="hud-stat"><div class="hud-label">Best</div><div class="hud-val" id="chimp-best">—</div></div>
     </div>
-    <div class="instruction" id="chimp-instr">Memorize the numbers</div>
+    <div class="chimp-status memorize" id="chimp-status"><span class="dot"></span><span id="chimp-instr">Memorize the numbers</span></div>
     <div id="chimp-grid"></div>
   </div>
   <div class="screen" id="chimp-result">
@@ -214,6 +228,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-heigh
       <div class="hud-stat"><div class="hud-label">Peeks</div><div class="lives" id="num-peeks"></div></div>
       <div class="hud-stat"><div class="hud-label">Best</div><div class="hud-val" id="num-best">—</div></div>
     </div>
+    <div class="phase-badge memorize" id="num-phase"><span class="phase-icon">🧠</span><span id="num-phase-text">Memorize</span></div>
     <div class="progress-bar"><div class="progress-fill" id="num-progress" style="width:100%"></div></div>
     <div class="number-display" id="num-display">—</div>
     <div class="instruction" id="num-instr">Memorize the number</div>
@@ -400,20 +415,25 @@ function chimpStart(){
   chimpRound()
 }
 
+function setChimpStatus(state,text){
+  const s=$('chimp-status')
+  s.classList.remove('memorize','go')
+  s.classList.add(state)
+  $('chimp-instr').textContent=text
+}
+
 async function chimpRound(){
   CHIMP.phase='showing'
   $('chimp-level').textContent=CHIMP.level
-  $('chimp-instr').textContent='Memorize the numbers'
-  $('chimp-instr').className='instruction'
   const count=CHIMP.level+2
+  setChimpStatus('memorize','Memorize the numbers')
   const positions=shuffle(Array.from({length:CHIMP.TOTAL},(_,i)=>i)).slice(0,count)
   CHIMP.seq=positions.map((cell,i)=>({cell,num:i+1}))
   renderChimpGrid(true)
   await sleep(CHIMP.SHOW)
   renderChimpGrid(false)
   CHIMP.nextIdx=0;CHIMP.phase='input'
-  $('chimp-instr').textContent=`Tap 1 → ${count} in order`
-  $('chimp-instr').className='instruction highlight'
+  setChimpStatus('go',`Tap 1 → ${count} in order`)
 }
 
 function renderChimpGrid(show){
@@ -483,12 +503,20 @@ function numStart(){
   numRound()
 }
 
+function setNumPhase(state){
+  const badge=$('num-phase'),text=$('num-phase-text'),icon=badge.querySelector('.phase-icon')
+  badge.classList.remove('memorize','go')
+  if(state==='memorize'){badge.classList.add('memorize');icon.textContent='🧠';text.textContent='Memorize'}
+  else if(state==='go'){badge.classList.add('go');icon.textContent='⚡';text.textContent='Go! Type it'}
+}
+
 async function numRound(){
   NUM.phase='showing'
   $('num-digits').textContent=NUM.digits
-  $('num-instr').textContent='Memorize the number'
+  $('num-instr').textContent=''
   $('num-instr').className='instruction'
   $('num-input-wrap').style.display='none'
+  setNumPhase('memorize')
   let n=''; for(let i=0;i<NUM.digits;i++)n+=rnd(i===0?1:0,9)
   NUM.current=n
   const dur=1200+(NUM.digits-1)*280
@@ -499,10 +527,11 @@ async function numRound(){
   await sleep(dur)
   $('num-display').style.opacity='0';await sleep(130)
   $('num-display').textContent='?';$('num-display').style.opacity='1'
+  setNumPhase('go')
   $('num-input-wrap').style.display='flex'
   const inp=$('num-input');inp.value='';inp.style.borderColor='';inp.className=''
   inp.focus();NUM.phase='input'
-  $('num-instr').textContent='Type the number'
+  $('num-instr').textContent=''
   $('num-instr').className='instruction highlight'
 }
 
