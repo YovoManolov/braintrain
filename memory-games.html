@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Braintrain — Morning Sharpness Routine</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--surface:#111;--surface2:#1a1a1a;--border:#2a2a2a;
+  --accent:#e8ff47;--accent2:#47ffe8;--text:#f0f0f0;--muted:#555;
+  --danger:#ff4747;--success:#47ff8a;
+  --font-mono:'IBM Plex Mono',monospace;--font-ui:'Space Grotesk',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+
+/* NAV */
+.nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.logo{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:0.18em;text-transform:uppercase;white-space:nowrap}
+.tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-wrap:nowrap}
+.tab-btn{background:none;border:none;border-right:1px solid var(--border);color:var(--muted);font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:8px 13px;cursor:pointer;transition:background 0.12s,color 0.12s;white-space:nowrap}
+.tab-btn:last-child{border-right:none}
+.tab-btn.active{background:var(--accent);color:#000;font-weight:600}
+.tab-btn:hover:not(.active){background:var(--surface2);color:var(--text)}
+
+/* LAYOUT */
+.game-container{flex:1;width:100%;max-width:680px;padding:1.5rem 1rem;display:flex;flex-direction:column;align-items:center}
+.screen{display:none;width:100%;flex-direction:column;align-items:center;gap:1.25rem}
+.screen.active{display:flex}
+.game-panel{width:100%;display:none}
+.game-panel.active{display:block}
+
+/* TYPOGRAPHY */
+.big-title{font-family:var(--font-mono);font-size:clamp(26px,6vw,50px);font-weight:600;letter-spacing:-0.02em;text-align:center;line-height:1.1}
+.big-title span{color:var(--accent)}
+.subtitle{color:var(--muted);font-size:14px;text-align:center;max-width:400px;line-height:1.7}
+.instruction{font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:0.06em;text-align:center;min-height:18px}
+.instruction.highlight{color:var(--accent2)}
+.instruction.danger{color:var(--danger)}
+
+/* BUTTONS */
+.btn{font-family:var(--font-mono);font-size:12px;letter-spacing:0.12em;text-transform:uppercase;padding:13px 32px;border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;border-radius:4px;transition:background 0.1s,color 0.1s,transform 0.07s;margin-top:0.25rem}
+.btn:hover{background:var(--accent);color:#000}
+.btn:active{transform:scale(0.97)}
+.btn.secondary{border-color:var(--border);color:var(--muted)}
+.btn.secondary:hover{background:var(--surface2);color:var(--text)}
+
+/* HUD */
+.hud{width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 0 0.75rem;border-bottom:1px solid var(--border);margin-bottom:0.25rem}
+.hud-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.hud-label{font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase}
+.hud-val{font-family:var(--font-mono);font-size:20px;font-weight:600;color:var(--accent)}
+.hud-val.neutral{color:var(--text)}
+
+/* LIVES */
+.lives{display:flex;gap:5px}
+.life{width:9px;height:9px;border-radius:50%;background:var(--accent);transition:background 0.2s}
+.life.dead{background:var(--border)}
+.life.shake{animation:shake 0.3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.life.peek-token{background:var(--accent2)}
+.life.peek-token.dead{background:var(--border)}
+@keyframes peekflash{0%{opacity:0;transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+
+/* PROGRESS BAR */
+.progress-bar{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.1s linear}
+
+/* RESULT */
+.result-box{border:1px solid var(--border);border-radius:8px;padding:2rem;width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:0.75rem;background:var(--surface)}
+.result-score{font-family:var(--font-mono);font-size:clamp(52px,12vw,90px);font-weight:600;color:var(--accent);line-height:1}
+.result-label{font-size:13px;color:var(--muted);text-align:center}
+.result-detail{font-family:var(--font-mono);font-size:13px;color:var(--text);text-align:center;line-height:1.8;white-space:pre-line}
+.pb-badge{background:var(--accent);color:#000;font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;padding:4px 12px;border-radius:3px}
+
+/* ANIMATIONS */
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(0.86)}100%{transform:scale(1)}}
+@keyframes popIn{0%{transform:scale(0.7);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes flash{0%,100%{opacity:1}50%{opacity:0.1}}
+
+/* ═══════════════════════════════════════
+   1. CHIMP TEST
+═══════════════════════════════════════ */
+#chimp-grid{display:grid;gap:7px;width:100%;user-select:none;-webkit-user-select:none}
+.chimp-cell{aspect-ratio:1;border-radius:6px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:clamp(13px,2.2vw,20px);font-weight:600;cursor:pointer;transition:background 0.07s,border-color 0.07s,transform 0.05s;will-change:transform}
+.chimp-cell.has-num{border-color:var(--accent);color:var(--accent)}
+.chimp-cell.hidden-num{border-color:var(--border);color:transparent;cursor:pointer}
+.chimp-cell.hidden-num:hover{background:var(--accent);border-color:var(--accent);transform:scale(0.94)}
+.chimp-cell.correct{background:var(--success)!important;border-color:var(--success)!important;color:#000!important;animation:pop 0.18s ease}
+.chimp-cell.wrong{background:var(--danger)!important;border-color:var(--danger)!important;color:#000!important;animation:pop 0.18s ease}
+.chimp-cell.empty{background:transparent;border-color:transparent;pointer-events:none}
+
+/* ═══════════════════════════════════════
+   2. NUMBER MEMORY
+═══════════════════════════════════════ */
+.number-display{font-family:var(--font-mono);font-size:clamp(30px,8vw,68px);font-weight:600;letter-spacing:0.12em;text-align:center;color:var(--text);min-height:85px;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s;word-break:break-all;max-width:600px;padding:0.5rem}
+.number-input-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:360px}
+#num-input{font-family:var(--font-mono);font-size:clamp(22px,5vw,38px);font-weight:600;letter-spacing:0.18em;text-align:center;background:var(--surface2);border:2px solid var(--border);border-radius:6px;color:var(--text);width:100%;padding:14px;outline:none;transition:border-color 0.12s;caret-color:var(--accent)}
+#num-input:focus{border-color:var(--accent)}
+#num-input.correct-border{border-color:var(--success)!important}
+#num-input.wrong-border{border-color:var(--danger)!important}
+
+/* ═══════════════════════════════════════
+   3. COLOR SEQUENCE
+═══════════════════════════════════════ */
+.color-stage{display:flex;flex-direction:column;align-items:center;gap:1.25rem;width:100%}
+.color-flash-box{width:160px;height:160px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);transition:background 0.08s;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:var(--muted);letter-spacing:0.1em}
+.color-flash-box.lit{animation:colorlit 0.5s ease}
+@keyframes colorlit{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+.color-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:380px}
+.color-btn{height:70px;border-radius:8px;border:2px solid transparent;cursor:pointer;transition:transform 0.07s,border-color 0.1s,opacity 0.1s;outline:none}
+.color-btn:hover{transform:scale(0.94)}
+.color-btn:active{transform:scale(0.88)}
+.color-btn.correct-flash{animation:colorCorrect 0.25s ease}
+.color-btn.wrong-flash{animation:colorWrong 0.3s ease}
+@keyframes colorCorrect{0%{filter:brightness(1)}50%{filter:brightness(2)}100%{filter:brightness(1)}}
+@keyframes colorWrong{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ═══════════════════════════════════════
+   4. PATTERN GRID (visual memory)
+═══════════════════════════════════════ */
+#pattern-grid{display:grid;gap:6px;width:100%;max-width:380px;user-select:none;-webkit-user-select:none}
+.pat-cell{aspect-ratio:1;border-radius:6px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:background 0.08s,border-color 0.08s,transform 0.05s}
+.pat-cell.lit{background:var(--accent);border-color:var(--accent)}
+.pat-cell.selected{background:var(--accent2);border-color:var(--accent2)}
+.pat-cell.correct-cell{background:var(--success)!important;border-color:var(--success)!important;animation:pop 0.2s ease}
+.pat-cell.wrong-cell{background:var(--danger)!important;border-color:var(--danger)!important;animation:pop 0.2s ease}
+.pat-cell:hover:not(.lit){background:var(--surface);transform:scale(0.95)}
+
+/* ═══════════════════════════════════════
+   5. REACTION TIME
+═══════════════════════════════════════ */
+.reaction-arena{width:100%;max-width:500px;height:280px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;transition:background 0.1s;position:relative;overflow:hidden}
+.reaction-arena.waiting{background:var(--surface2)}
+.reaction-arena.ready{background:#1a2a10;border-color:#47ff8a}
+.reaction-arena.too-early{background:#2a0a0a;border-color:var(--danger)}
+.reaction-inner{display:flex;flex-direction:column;align-items:center;gap:0.75rem;pointer-events:none}
+.reaction-icon{font-size:48px;line-height:1}
+.reaction-msg{font-family:var(--font-mono);font-size:13px;color:var(--muted);text-align:center;letter-spacing:0.06em}
+.reaction-msg.bright{color:var(--text)}
+.reaction-time{font-family:var(--font-mono);font-size:clamp(36px,10vw,72px);font-weight:600;color:var(--accent);line-height:1}
+.reaction-history{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:0.5rem}
+.reaction-pill{font-family:var(--font-mono);font-size:11px;color:var(--text);background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px}
+.reaction-pill.best{border-color:var(--accent);color:var(--accent)}
+
+@media(max-width:480px){
+  .nav{padding:0.75rem}
+  .tab-btn{padding:7px 9px;font-size:9px}
+  .game-container{padding:1rem 0.6rem}
+  .color-btns{grid-template-columns:repeat(4,1fr);gap:7px}
+  .color-btn{height:58px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo"><span style="color:var(--text)">brain</span><span style="color:var(--accent)">train</span></div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchGame('chimp')">Chimp</button>
+    <button class="tab-btn" onclick="switchGame('num')">Numbers</button>
+    <button class="tab-btn" onclick="switchGame('color')">Colors</button>
+    <button class="tab-btn" onclick="switchGame('pattern')">Pattern</button>
+    <button class="tab-btn" onclick="switchGame('reaction')">Reaction</button>
+  </div>
+</nav>
+
+<div class="game-container">
+
+<!-- ══════════════════════════════════════════════════
+     1. CHIMP TEST
+══════════════════════════════════════════════════ -->
+<div class="game-panel active" id="game-chimp">
+  <div class="screen active" id="chimp-start">
+    <div class="big-title">Chimp<br><span>Memory</span></div>
+    <div class="subtitle">Numbers flash on the grid. Memorize their positions, then tap them in order 1 → N. Chimpanzees ace this. Can you?</div>
+    <button class="btn" onclick="chimpStart()">Start</button>
+  </div>
+  <div class="screen" id="chimp-play">
+    <div class="hud">
+      <div class="hud-stat"><div class="hud-label">Level</div><div class="hud-val neutral" id="chimp-level">1</div></div>
+      <div class="hud-stat"><div class="hud-label">Lives</div><div class="lives" id="chimp-lives"></div></div>
+      <div class="hud-stat"><div class="hud-label">Best</div><div class="hud-val" id="chimp-best">—</div></div>
+    </div>
+    <div class="instruction" id="chimp-instr">Memorize the numbers</div>
+    <div id="chimp-grid"></div>
+  </div>
+  <div class="screen" id="chimp-result">
+    <div class="result-box">
+      <div class="result-label">You reached level</div>
+      <div class="result-score" id="chimp-result-score">1</div>
+      <div class="result-detail" id="chimp-result-detail"></div>
+      <div id="chimp-pb-badge"></div>
+    </div>
+    <button class="btn" onclick="chimpStart()">Try Again</button>
+    <button class="btn secondary" onclick="showStart('chimp')">Back</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     2. NUMBER MEMORY
+══════════════════════════════════════════════════ -->
+<div class="game-panel" id="game-num">
+  <div class="screen active" id="num-start">
+    <div class="big-title">Number<br><span>Memory</span></div>
+    <div class="subtitle">A number flashes on screen. Memorize it, then type it back. You get 2 peeks per game — use them wisely.</div>
+    <button class="btn" onclick="numStart()">Start</button>
+  </div>
+  <div class="screen" id="num-play">
+    <div class="hud">
+      <div class="hud-stat"><div class="hud-label">Digits</div><div class="hud-val neutral" id="num-digits">1</div></div>
+      <div class="hud-stat"><div class="hud-label">Lives</div><div class="lives" id="num-lives"></div></div>
+      <div class="hud-stat"><div class="hud-label">Peeks</div><div class="lives" id="num-peeks"></div></div>
+      <div class="hud-stat"><div class="hud-label">Best</div><div class="hud-val" id="num-best">—</div></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="num-progress" style="width:100%"></div></div>
+    <div class="number-display" id="num-display">—</div>
+    <div class="instruction" id="num-instr">Memorize the number</div>
+    <div class="number-input-wrap" id="num-input-wrap" style="display:none">
+      <input type="tel" id="num-input" placeholder="Type the number" autocomplete="off" spellcheck="false" oninput="numCheckInput()" onkeydown="if(event.key==='Enter')numSubmit()">
+      <div style="display:flex;gap:10px;width:100%">
+        <button class="btn" onclick="numSubmit()" style="flex:1">Submit</button>
+        <button class="btn secondary" id="num-peek-btn" onclick="numPeek()" style="flex:0 0 auto;padding:13px 18px" title="Peek at the number (costs 1 peek token)">👁 Peek</button>
+      </div>
+    </div>
+  </div>
+  <div class="screen" id="num-result">
+    <div class="result-box">
+      <div class="result-label">Best streak</div>
+      <div class="result-score" id="num-result-score">1</div>
+      <div class="result-label">digits remembered</div>
+      <div class="result-detail" id="num-result-detail"></div>
+      <div id="num-pb-badge"></div>
+    </div>
+    <button class="btn" onclick="numStart()">Try Again</button>
+    <button class="btn secondary" onclick="showStart('num')">Back</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     3. COLOR SEQUENCE
+══════════════════════════════════════════════════ -->
+<div class="game-panel" id="game-color">
+  <div class="screen active" id="color-start">
+    <div class="big-title">Color<br><span>Sequence</span></div>
+    <div class="subtitle">Watch the color sequence light up. Then repeat it in the same order. Each round adds one more step.</div>
+    <button class="btn" onclick="colorStart()">Start</button>
+  </div>
+  <div class="screen" id="color-play">
+    <div class="hud">
+      <div class="hud-stat"><div class="hud-label">Round</div><div class="hud-val neutral" id="color-round">1</div></div>
+      <div class="hud-stat"><div class="hud-label">Lives</div><div class="lives" id="color-lives"></div></div>
+      <div class="hud-stat"><div class="hud-label">Best</div><div class="hud-val" id="color-best">—</div></div>
+    </div>
+    <div class="instruction" id="color-instr">Watch the sequence</div>
+    <div class="color-stage">
+      <div class="color-flash-box" id="color-flash-box">watch</div>
+      <div class="color-btns" id="color-btns"></div>
+    </div>
+  </div>
+  <div class="screen" id="color-result">
+    <div class="result-box">
+      <div class="result-label">You reached round</div>
+      <div class="result-score" id="color-result-score">1</div>
+      <div class="result-detail" id="color-result-detail"></div>
+      <div id="color-pb-badge"></div>
+    </div>
+    <button class="btn" onclick="colorStart()">Try Again</button>
+    <button class="btn secondary" onclick="showStart('color')">Back</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     4. PATTERN GRID
+══════════════════════════════════════════════════ -->
+<div class="game-panel" id="game-pattern">
+  <div class="screen active" id="pattern-start">
+    <div class="big-title">Pattern<br><span>Grid</span></div>
+    <div class="subtitle">A pattern of highlighted cells flashes on the grid. Memorize their positions and recreate it exactly.</div>
+    <button class="btn" onclick="patternStart()">Start</button>
+  </div>
+  <div class="screen" id="pattern-play">
+    <div class="hud">
+      <div class="hud-stat"><div class="hud-label">Level</div><div class="hud-val neutral" id="pattern-level">1</div></div>
+      <div class="hud-stat"><div class="hud-label">Lives</div><div class="lives" id="pattern-lives"></div></div>
+      <div class="hud-stat"><div class="hud-label">Best</div><div class="hud-val" id="pattern-best">—</div></div>
+    </div>
+    <div class="instruction" id="pattern-instr">Memorize the pattern</div>
+    <div id="pattern-grid"></div>
+    <button class="btn" id="pattern-submit-btn" style="display:none" onclick="patternSubmit()">Confirm</button>
+  </div>
+  <div class="screen" id="pattern-result">
+    <div class="result-box">
+      <div class="result-label">You reached level</div>
+      <div class="result-score" id="pattern-result-score">1</div>
+      <div class="result-detail" id="pattern-result-detail"></div>
+      <div id="pattern-pb-badge"></div>
+    </div>
+    <button class="btn" onclick="patternStart()">Try Again</button>
+    <button class="btn secondary" onclick="showStart('pattern')">Back</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     5. REACTION TIME
+══════════════════════════════════════════════════ -->
+<div class="game-panel" id="game-reaction">
+  <div class="screen active" id="reaction-start">
+    <div class="big-title">Reaction<br><span>Time</span></div>
+    <div class="subtitle">Wait for the screen to turn green, then tap as fast as you can. 5 attempts per session — average is your score.</div>
+    <button class="btn" onclick="reactionStart()">Start</button>
+  </div>
+  <div class="screen" id="reaction-play">
+    <div class="hud">
+      <div class="hud-stat"><div class="hud-label">Attempt</div><div class="hud-val neutral" id="reaction-attempt">1/5</div></div>
+      <div class="hud-stat"><div class="hud-label">Last</div><div class="hud-val" id="reaction-last">—</div></div>
+      <div class="hud-stat"><div class="hud-label">Best avg</div><div class="hud-val" id="reaction-best">—</div></div>
+    </div>
+    <div class="reaction-arena waiting" id="reaction-arena" onclick="reactionTap()">
+      <div class="reaction-inner">
+        <div class="reaction-icon" id="reaction-icon">⏳</div>
+        <div class="reaction-msg" id="reaction-msg">Tap to begin</div>
+        <div class="reaction-time" id="reaction-time" style="display:none"></div>
+      </div>
+    </div>
+    <div class="reaction-history" id="reaction-history"></div>
+  </div>
+  <div class="screen" id="reaction-result">
+    <div class="result-box">
+      <div class="result-label">Average reaction time</div>
+      <div class="result-score" id="reaction-result-score" style="font-size:clamp(36px,9vw,72px)">—</div>
+      <div class="result-label">milliseconds</div>
+      <div class="result-detail" id="reaction-result-detail"></div>
+      <div id="reaction-pb-badge"></div>
+    </div>
+    <button class="btn" onclick="reactionStart()">Try Again</button>
+    <button class="btn secondary" onclick="showStart('reaction')">Back</button>
+  </div>
+</div>
+
+</div><!-- /game-container -->
+
+<script>
+// ─────────────────────── UTILS ───────────────────────
+const $=id=>document.getElementById(id)
+const sleep=ms=>new Promise(r=>setTimeout(r,ms))
+const getPB=key=>parseFloat(localStorage.getItem(key)||'0')
+const setPB=(key,val)=>localStorage.setItem(key,val)
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=rnd(0,i);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+
+function showScreen(prefix,name){
+  ;['start','play','result'].forEach(s=>{
+    const el=$(prefix+'-'+s)
+    if(el)el.classList.toggle('active',s===name)
+  })
+}
+function showStart(prefix){showScreen(prefix,'start')}
+
+function renderLives(id,total,remaining){
+  const el=$(id); el.innerHTML=''
+  for(let i=0;i<total;i++){
+    const d=document.createElement('div')
+    d.className='life'+(i>=remaining?' dead':'')
+    el.appendChild(d)
+  }
+}
+function loseLife(id){
+  const lives=[...($(id).querySelectorAll('.life:not(.dead)'))]
+  if(lives.length){const l=lives[lives.length-1];l.classList.add('dead','shake');setTimeout(()=>l.classList.remove('shake'),400)}
+}
+
+// ─────────────────────── GAME SWITCHER ───────────────────────
+const GAMES=['chimp','num','color','pattern','reaction']
+function switchGame(g){
+  GAMES.forEach(id=>{
+    $('game-'+id).classList.toggle('active',id===g)
+    const btn=document.querySelector(`.tab-btn[onclick="switchGame('${id}')"]`)
+    if(btn)btn.classList.toggle('active',id===g)
+  })
+  showStart(g)
+}
+// init tab buttons properly
+document.querySelectorAll('.tab-btn').forEach((btn,i)=>{
+  const g=GAMES[i]
+  btn.setAttribute('onclick',`switchGame('${g}')`)
+})
+
+// ═══════════════════════════════════════════════════════
+//  1. CHIMP TEST
+// ═══════════════════════════════════════════════════════
+const CHIMP={LIVES:3,TOTAL:25,COLS:5,SHOW:2600,level:1,lives:3,seq:[],nextIdx:0,phase:'idle'}
+
+function chimpStart(){
+  CHIMP.level=1;CHIMP.lives=CHIMP.LIVES;CHIMP.seq=[];CHIMP.nextIdx=0;CHIMP.phase='idle'
+  renderLives('chimp-lives',CHIMP.LIVES,CHIMP.lives)
+  $('chimp-best').textContent=getPB('chimp_pb')||'—'
+  showScreen('chimp','play')
+  chimpRound()
+}
+
+async function chimpRound(){
+  CHIMP.phase='showing'
+  $('chimp-level').textContent=CHIMP.level
+  $('chimp-instr').textContent='Memorize the numbers'
+  $('chimp-instr').className='instruction'
+  const count=CHIMP.level+2
+  const positions=shuffle(Array.from({length:CHIMP.TOTAL},(_,i)=>i)).slice(0,count)
+  CHIMP.seq=positions.map((cell,i)=>({cell,num:i+1}))
+  renderChimpGrid(true)
+  await sleep(CHIMP.SHOW)
+  renderChimpGrid(false)
+  CHIMP.nextIdx=0;CHIMP.phase='input'
+  $('chimp-instr').textContent=`Tap 1 → ${count} in order`
+  $('chimp-instr').className='instruction highlight'
+}
+
+function renderChimpGrid(show){
+  const grid=$('chimp-grid')
+  grid.style.gridTemplateColumns=`repeat(${CHIMP.COLS},1fr)`
+  grid.innerHTML=''
+  const map={}
+  CHIMP.seq.forEach(s=>map[s.cell]=s.num)
+  for(let i=0;i<CHIMP.TOTAL;i++){
+    const el=document.createElement('div')
+    if(map[i]!==undefined){
+      el.className=show?'chimp-cell has-num':'chimp-cell hidden-num'
+      el.textContent=show?map[i]:''
+      el.dataset.cell=i
+      if(!show)el.addEventListener('pointerdown',onChimpTap,{passive:true})
+    } else {
+      el.className='chimp-cell empty'
+    }
+    grid.appendChild(el)
+  }
+}
+
+function onChimpTap(e){
+  if(CHIMP.phase!=='input')return
+  const el=e.currentTarget
+  const idx=parseInt(el.dataset.cell)
+  const exp=CHIMP.seq[CHIMP.nextIdx]
+  if(idx===exp.cell){
+    el.classList.replace('hidden-num','correct');el.textContent=exp.num
+    el.removeEventListener('pointerdown',onChimpTap)
+    CHIMP.nextIdx++
+    if(CHIMP.nextIdx===CHIMP.seq.length){CHIMP.phase='idle';setTimeout(()=>{CHIMP.level++;chimpRound()},600)}
+  } else {
+    CHIMP.phase='idle';el.classList.replace('hidden-num','wrong')
+    CHIMP.lives--;loseLife('chimp-lives')
+    setTimeout(()=>{
+      CHIMP.seq.forEach(s=>{
+        const cells=[...$('chimp-grid').querySelectorAll('[data-cell]')]
+        const t=cells.find(c=>parseInt(c.dataset.cell)===s.cell)
+        if(t&&!t.classList.contains('correct')){t.classList.remove('hidden-num');t.classList.add('has-num');t.textContent=s.num}
+      })
+      if(CHIMP.lives<=0){setTimeout(()=>chimpEnd(),900)}else{setTimeout(()=>chimpRound(),1300)}
+    },350)
+  }
+}
+
+function chimpEnd(){
+  const score=CHIMP.level,pb=getPB('chimp_pb'),isNew=score>pb
+  if(isNew)setPB('chimp_pb',score)
+  $('chimp-result-score').textContent=score
+  $('chimp-result-detail').textContent=`Recalled sequences up to ${CHIMP.seq.length} numbers`
+  $('chimp-pb-badge').innerHTML=isNew?'<div class="pb-badge">New personal best!</div>':''
+  showScreen('chimp','result')
+}
+
+// ═══════════════════════════════════════════════════════
+//  2. NUMBER MEMORY
+// ═══════════════════════════════════════════════════════
+const NUM={LIVES:3,digits:1,lives:3,current:'',phase:'idle'}
+
+function numStart(){
+  NUM.digits=1;NUM.lives=NUM.LIVES;NUM.phase='idle'
+  renderLives('num-lives',NUM.LIVES,NUM.lives)
+  $('num-best').textContent=getPB('num_pb')||'—'
+  $('num-input-wrap').style.display='none'
+  showScreen('num','play')
+  numRound()
+}
+
+async function numRound(){
+  NUM.phase='showing'
+  $('num-digits').textContent=NUM.digits
+  $('num-instr').textContent='Memorize the number'
+  $('num-instr').className='instruction'
+  $('num-input-wrap').style.display='none'
+  let n=''; for(let i=0;i<NUM.digits;i++)n+=rnd(i===0?1:0,9)
+  NUM.current=n
+  const dur=1200+(NUM.digits-1)*280
+  $('num-display').textContent=n;$('num-display').style.opacity='1'
+  const fill=$('num-progress')
+  fill.style.transition='none';fill.style.width='100%'
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{fill.style.transition=`width ${dur}ms linear`;fill.style.width='0%'}))
+  await sleep(dur)
+  $('num-display').style.opacity='0';await sleep(130)
+  $('num-display').textContent='?';$('num-display').style.opacity='1'
+  $('num-input-wrap').style.display='flex'
+  const inp=$('num-input');inp.value='';inp.style.borderColor='';inp.className=''
+  inp.focus();NUM.phase='input'
+  $('num-instr').textContent='Type the number'
+  $('num-instr').className='instruction highlight'
+}
+
+function numCheckInput(){
+  const inp=$('num-input'),val=inp.value
+  inp.style.borderColor=val===NUM.current.slice(0,val.length)?'':'var(--danger)'
+}
+
+async function numSubmit(){
+  if(NUM.phase!=='input')return
+  NUM.phase='checking'
+  const val=$('num-input').value.trim()
+  if(val===NUM.current){
+    $('num-input').classList.add('correct-border')
+    $('num-instr').textContent='Correct!'
+    $('num-instr').className='instruction'
+    await sleep(650);NUM.digits++;numRound()
+  } else {
+    $('num-input').classList.add('wrong-border')
+    $('num-instr').textContent='The number was: '+NUM.current
+    $('num-instr').className='instruction danger'
+    NUM.lives--;loseLife('num-lives');await sleep(1300)
+    if(NUM.lives<=0)numEnd();else{NUM.digits=Math.max(1,NUM.digits-1);numRound()}
+  }
+}
+
+function numEnd(){
+  const score=NUM.digits,pb=getPB('num_pb'),isNew=score>pb
+  if(isNew)setPB('num_pb',score)
+  $('num-result-score').textContent=score
+  $('num-result-detail').textContent=`You memorized up to ${score}-digit numbers`
+  $('num-pb-badge').innerHTML=isNew?'<div class="pb-badge">New personal best!</div>':''
+  showScreen('num','result')
+}
+
+// ═══════════════════════════════════════════════════════
+//  3. COLOR SEQUENCE
+// ═══════════════════════════════════════════════════════
+const COLORS=[
+  {id:'red',   hex:'#e05252',label:'Red'},
+  {id:'blue',  hex:'#5288e0',label:'Blue'},
+  {id:'green', hex:'#52c975',label:'Green'},
+  {id:'yellow',hex:'#e8d852',label:'Yellow'},
+  {id:'purple',hex:'#a052e0',label:'Purple'},
+  {id:'orange',hex:'#e08c52',label:'Orange'},
+  {id:'pink',  hex:'#e052b0',label:'Pink'},
+  {id:'teal',  hex:'#52d4e0',label:'Teal'},
+]
+const CLR={LIVES:3,round:1,lives:3,seq:[],nextIdx:0,phase:'idle',playSpeed:600}
+
+function colorStart(){
+  CLR.round=1;CLR.lives=CLR.LIVES;CLR.seq=[];CLR.nextIdx=0;CLR.phase='idle'
+  renderLives('color-lives',CLR.LIVES,CLR.lives)
+  $('color-best').textContent=getPB('color_pb')||'—'
+  buildColorBtns()
+  showScreen('color','play')
+  colorRound()
+}
+
+function buildColorBtns(){
+  const container=$('color-btns');container.innerHTML=''
+  COLORS.forEach(c=>{
+    const btn=document.createElement('button')
+    btn.className='color-btn'
+    btn.style.background=c.hex
+    btn.dataset.id=c.id
+    btn.setAttribute('aria-label',c.label)
+    btn.addEventListener('pointerdown',onColorTap,{passive:true})
+    container.appendChild(btn)
+  })
+}
+
+async function colorRound(){
+  CLR.phase='showing'
+  $('color-round').textContent=CLR.round
+  $('color-instr').textContent='Watch the sequence'
+  $('color-instr').className='instruction'
+  setColorBtnsEnabled(false)
+  // add one to sequence
+  CLR.seq.push(COLORS[rnd(0,COLORS.length-1)].id)
+  const speed=Math.max(300,CLR.playSpeed-CLR.round*20)
+  await sleep(500)
+  for(const cid of CLR.seq){
+    await flashColorBox(cid,speed)
+    await sleep(speed*0.4)
+  }
+  CLR.nextIdx=0;CLR.phase='input'
+  setColorBtnsEnabled(true)
+  $('color-flash-box').style.background='var(--surface2)'
+  $('color-flash-box').textContent=''
+  $('color-instr').textContent='Your turn — repeat the sequence'
+  $('color-instr').className='instruction highlight'
+}
+
+async function flashColorBox(cid,dur){
+  const c=COLORS.find(x=>x.id===cid)
+  const box=$('color-flash-box')
+  box.style.background=c.hex;box.textContent=''
+  box.classList.add('lit')
+  await sleep(dur)
+  box.classList.remove('lit')
+  box.style.background='var(--surface2)'
+}
+
+function setColorBtnsEnabled(on){
+  $('color-btns').querySelectorAll('.color-btn').forEach(b=>b.style.pointerEvents=on?'auto':'none')
+}
+
+async function onColorTap(e){
+  if(CLR.phase!=='input')return
+  const btn=e.currentTarget
+  const cid=btn.dataset.id
+  const expected=CLR.seq[CLR.nextIdx]
+  // flash the box with tapped color
+  const c=COLORS.find(x=>x.id===cid)
+  const box=$('color-flash-box')
+  box.style.background=c.hex
+
+  if(cid===expected){
+    btn.classList.add('correct-flash');setTimeout(()=>btn.classList.remove('correct-flash'),300)
+    CLR.nextIdx++
+    if(CLR.nextIdx===CLR.seq.length){
+      CLR.phase='idle'
+      $('color-instr').textContent='Correct!'
+      $('color-instr').className='instruction'
+      setColorBtnsEnabled(false)
+      await sleep(700)
+      CLR.round++
+      colorRound()
+    }
+  } else {
+    CLR.phase='idle'
+    setColorBtnsEnabled(false)
+    btn.classList.add('wrong-flash');setTimeout(()=>btn.classList.remove('wrong-flash'),350)
+    CLR.lives--;loseLife('color-lives')
+    $('color-instr').textContent='Wrong! Lost a life.'
+    $('color-instr').className='instruction danger'
+    await sleep(1200)
+    if(CLR.lives<=0){colorEnd()}else{CLR.seq=[];CLR.round=Math.max(1,CLR.round-1);colorRound()}
+  }
+}
+
+function colorEnd(){
+  const score=CLR.round,pb=getPB('color_pb'),isNew=score>pb
+  if(isNew)setPB('color_pb',score)
+  $('color-result-score').textContent=score
+  $('color-result-detail').textContent=`Sequence length reached: ${CLR.seq.length} colors`
+  $('color-pb-badge').innerHTML=isNew?'<div class="pb-badge">New personal best!</div>':''
+  showScreen('color','result')
+}
+
+// ═══════════════════════════════════════════════════════
+//  4. PATTERN GRID
+// ═══════════════════════════════════════════════════════
+const PAT={LIVES:3,SIZE:4,level:1,lives:3,lit:[],selected:[],phase:'idle'}
+
+function patternStart(){
+  PAT.level=1;PAT.lives=PAT.LIVES;PAT.lit=[];PAT.selected=[];PAT.phase='idle'
+  renderLives('pattern-lives',PAT.LIVES,PAT.lives)
+  $('pattern-best').textContent=getPB('pattern_pb')||'—'
+  $('pattern-submit-btn').style.display='none'
+  showScreen('pattern','play')
+  patternRound()
+}
+
+async function patternRound(){
+  PAT.phase='showing'
+  // grid grows: 4x4 until level 5, then 5x5
+  PAT.SIZE=PAT.level<=4?4:PAT.level<=9?5:6
+  const total=PAT.SIZE*PAT.SIZE
+  const count=PAT.level+2
+  $('pattern-level').textContent=PAT.level
+  $('pattern-instr').textContent='Memorize the pattern'
+  $('pattern-instr').className='instruction'
+  $('pattern-submit-btn').style.display='none'
+  PAT.selected=[]
+
+  // pick lit cells
+  PAT.lit=shuffle(Array.from({length:total},(_,i)=>i)).slice(0,count)
+
+  renderPatternGrid(true)
+  const showTime=1200+(PAT.level*200)
+  await sleep(showTime)
+  renderPatternGrid(false)
+  PAT.phase='input'
+  $('pattern-instr').textContent=`Select the ${count} highlighted cells`
+  $('pattern-instr').className='instruction highlight'
+  $('pattern-submit-btn').style.display='block'
+}
+
+function renderPatternGrid(showLit){
+  const grid=$('pattern-grid')
+  grid.style.gridTemplateColumns=`repeat(${PAT.SIZE},1fr)`
+  grid.innerHTML=''
+  const total=PAT.SIZE*PAT.SIZE
+  for(let i=0;i<total;i++){
+    const el=document.createElement('div')
+    el.className='pat-cell'+(showLit&&PAT.lit.includes(i)?' lit':'')
+    el.dataset.idx=i
+    if(!showLit)el.addEventListener('pointerdown',onPatTap,{passive:true})
+    grid.appendChild(el)
+  }
+}
+
+function onPatTap(e){
+  if(PAT.phase!=='input')return
+  const el=e.currentTarget
+  const idx=parseInt(el.dataset.idx)
+  if(el.classList.contains('selected')){
+    el.classList.remove('selected')
+    PAT.selected=PAT.selected.filter(x=>x!==idx)
+  } else {
+    el.classList.add('selected')
+    PAT.selected.push(idx)
+  }
+}
+
+async function patternSubmit(){
+  if(PAT.phase!=='input')return
+  PAT.phase='checking'
+  $('pattern-submit-btn').style.display='none'
+  const cells=[...$('pattern-grid').querySelectorAll('.pat-cell')]
+
+  // compare sets
+  const litSet=new Set(PAT.lit)
+  const selSet=new Set(PAT.selected)
+  const correct=[...litSet].every(i=>selSet.has(i))&&selSet.size===litSet.size
+
+  cells.forEach(el=>{
+    const idx=parseInt(el.dataset.idx)
+    if(PAT.lit.includes(idx)&&PAT.selected.includes(idx)){el.classList.add('correct-cell')}
+    else if(!PAT.lit.includes(idx)&&PAT.selected.includes(idx)){el.classList.add('wrong-cell')}
+    else if(PAT.lit.includes(idx)&&!PAT.selected.includes(idx)){el.classList.add('lit')}
+  })
+
+  if(correct){
+    $('pattern-instr').textContent='Perfect!'
+    $('pattern-instr').className='instruction'
+    await sleep(800);PAT.level++;patternRound()
+  } else {
+    $('pattern-instr').textContent='Not quite — lost a life'
+    $('pattern-instr').className='instruction danger'
+    PAT.lives--;loseLife('pattern-lives')
+    await sleep(1400)
+    if(PAT.lives<=0){patternEnd()}else{PAT.level=Math.max(1,PAT.level-1);patternRound()}
+  }
+}
+
+function patternEnd(){
+  const score=PAT.level,pb=getPB('pattern_pb'),isNew=score>pb
+  if(isNew)setPB('pattern_pb',score)
+  $('pattern-result-score').textContent=score
+  $('pattern-result-detail').textContent=`Grid size: ${PAT.SIZE}×${PAT.SIZE}\nCells to memorize: ${PAT.lit.length}`
+  $('pattern-pb-badge').innerHTML=isNew?'<div class="pb-badge">New personal best!</div>':''
+  showScreen('pattern','result')
+}
+
+// ═══════════════════════════════════════════════════════
+//  5. REACTION TIME
+// ═══════════════════════════════════════════════════════
+const REACT={ROUNDS:5,attempts:[],phase:'idle',waitTimer:null,startTime:0,current:0}
+
+function reactionStart(){
+  REACT.attempts=[];REACT.phase='idle';REACT.current=0
+  clearTimeout(REACT.waitTimer)
+  $('reaction-attempt').textContent='1/'+REACT.ROUNDS
+  $('reaction-last').textContent='—'
+  const pb=getPB('reaction_pb')
+  $('reaction-best').textContent=pb>0?Math.round(pb)+' ms':'—'
+  $('reaction-history').innerHTML=''
+  $('reaction-time').style.display='none'
+  setReactionState('idle','⏳','Tap to begin')
+  showScreen('reaction','play')
+}
+
+function setReactionState(cls,icon,msg){
+  const arena=$('reaction-arena')
+  arena.className='reaction-arena '+cls
+  $('reaction-icon').textContent=icon
+  $('reaction-msg').textContent=msg
+  $('reaction-msg').className='reaction-msg'+(cls==='ready'?' bright':'')
+}
+
+function reactionTap(){
+  if(REACT.phase==='idle'){
+    // start waiting
+    REACT.phase='waiting'
+    setReactionState('waiting','😴','Wait for green...')
+    const delay=rnd(1500,5000)
+    REACT.waitTimer=setTimeout(()=>{
+      REACT.phase='ready'
+      REACT.startTime=performance.now()
+      setReactionState('ready','🟢','TAP NOW!')
+    },delay)
+  } else if(REACT.phase==='waiting'){
+    // too early
+    clearTimeout(REACT.waitTimer)
+    REACT.phase='idle'
+    setReactionState('too-early','❌','Too early! Tap to retry')
+  } else if(REACT.phase==='ready'){
+    const ms=Math.round(performance.now()-REACT.startTime)
+    REACT.phase='idle'
+    REACT.attempts.push(ms)
+    REACT.current++
+    $('reaction-last').textContent=ms+' ms'
+    $('reaction-time').style.display='block'
+    $('reaction-time').textContent=ms+' ms'
+    setReactionState('idle','','Tap to continue')
+    $('reaction-msg').textContent='Tap to continue'
+    $('reaction-attempt').textContent=(REACT.current+1)+'/'+REACT.ROUNDS
+
+    // add pill to history
+    const pill=document.createElement('div')
+    const best=REACT.attempts.indexOf(Math.min(...REACT.attempts))===REACT.attempts.length-1
+    pill.className='reaction-pill'+(best?' best':'')
+    pill.textContent='#'+REACT.current+' '+ms+'ms'
+    $('reaction-history').appendChild(pill)
+
+    if(REACT.current>=REACT.ROUNDS){
+      setTimeout(reactionEnd,700)
+    }
+  }
+}
+
+function reactionEnd(){
+  const avg=Math.round(REACT.attempts.reduce((a,b)=>a+b,0)/REACT.attempts.length)
+  const best=Math.min(...REACT.attempts)
+  const pb=getPB('reaction_pb')
+  const isNew=pb===0||avg<pb
+  if(isNew)setPB('reaction_pb',avg)
+
+  let rating='Average'
+  if(avg<200)rating='Exceptional'
+  else if(avg<250)rating='Fast'
+  else if(avg<320)rating='Good'
+  else if(avg>450)rating='Slow'
+
+  $('reaction-result-score').textContent=avg
+  $('reaction-result-detail').textContent=`Best: ${best} ms  |  Rating: ${rating}\nAll: ${REACT.attempts.join(' ms, ')} ms`
+  $('reaction-pb-badge').innerHTML=isNew?'<div class="pb-badge">New personal best!</div>':''
+  showScreen('reaction','result')
+}
+</script>
+</body>
+</html>
